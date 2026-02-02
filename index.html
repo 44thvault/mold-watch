@@ -54,57 +54,67 @@
     Loading…
   </div>
 
-  <script>
-    async function loadPosts() {
-      const keywords = [
-        'mold',
-        'mildew',
-        'fungus',
-        'fungal',
-        'bud rot',
-        'powdery mildew',
-        'pm'
-      ];
+ <script>
+async function loadPosts() {
+  const keywords = [
+    'mold',
+    'mildew',
+    'fungus',
+    'fungal',
+    'bud rot',
+    'powdery mildew',
+    'pm'
+  ];
 
-      const query = encodeURIComponent(
-        keywords.map(k => `"${k}"`).join(' OR ')
-      );
+  const query = encodeURIComponent(
+    keywords.map(k => `"${k}"`).join(' OR ')
+  );
 
-      const rssUrl =
-        'https://www.reddit.com/r/FLMedicalTrees/search.rss?q=' +
-        query +
-        '&restrict_sr=1&sort=new';
+  const redditRSS =
+    'https://www.reddit.com/r/FLMedicalTrees/search.rss' +
+    '?q=' + query +
+    '&restrict_sr=1&sort=new';
 
-      const api =
-        'https://api.rss2json.com/v1/api.json?rss_url=' +
-        encodeURIComponent(rssUrl);
+  const proxy =
+    'https://api.allorigins.win/raw?url=' +
+    encodeURIComponent(redditRSS);
 
-      try {
-        const res = await fetch(api);
-        const data = await res.json();
+  try {
+    const res = await fetch(proxy);
+    const text = await res.text();
 
-        if (!data.items || data.items.length === 0) {
-          document.getElementById('content').innerHTML = 'No posts found.';
-          return;
-        }
+    const xml = new window.DOMParser().parseFromString(text, "text/xml");
+    const items = Array.from(xml.querySelectorAll("entry"));
 
-        document.getElementById('content').innerHTML =
-          data.items.map(item => `
-            <div class="item">
-              <a href="${item.link}" target="_blank">${item.title}</a>
-              <div class="meta">
-                ${item.author || 'Reddit'} •
-                ${new Date(item.pubDate).toLocaleDateString()}
-              </div>
-            </div>
-          `).join('');
-      } catch (e) {
-        document.getElementById('content').innerHTML =
-          '<span style="color:red">Failed to load posts</span>';
-      }
+    if (items.length === 0) {
+      document.getElementById('content').innerHTML = 'No posts found.';
+      return;
     }
 
-    loadPosts();
-  </script>
+    document.getElementById('content').innerHTML =
+      items.map(item => {
+        const title = item.querySelector("title")?.textContent;
+        const link = item.querySelector("link")?.getAttribute("href");
+        const author = item.querySelector("author name")?.textContent || "Reddit";
+        const date = item.querySelector("updated")?.textContent;
+
+        return `
+          <div class="item">
+            <a href="${link}" target="_blank">${title}</a>
+            <div class="meta">
+              ${author} • ${new Date(date).toLocaleDateString()}
+            </div>
+          </div>
+        `;
+      }).join('');
+  } catch (e) {
+    document.getElementById('content').innerHTML =
+      '<span style="color:red">Failed to load posts</span>';
+  }
+}
+
+loadPosts();
+</script>
 </body>
 </html>
+
