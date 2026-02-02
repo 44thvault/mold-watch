@@ -66,48 +66,42 @@ async function loadPosts() {
     'pm'
   ];
 
-  const redditRSS =
-    'https://www.reddit.com/r/FLMedicalTrees/new.rss';
+  const redditJson =
+    'https://www.reddit.com/r/FLMedicalTrees/new.json?limit=100';
 
   const proxy =
-    'https://cors.isomorphic-git.org/' + redditRSS;
+    'https://corsproxy.io/?' + encodeURIComponent(redditJson);
 
   try {
     const res = await fetch(proxy);
-    const text = await res.text();
+    const data = await res.json();
 
-    const xml = new DOMParser().parseFromString(text, 'text/xml');
-    const items = Array.from(xml.querySelectorAll('entry'));
+    const posts = data.data.children
+      .map(p => p.data)
+      .filter(p =>
+        keywords.some(k =>
+          (p.title + ' ' + (p.selftext || '')).toLowerCase().includes(k)
+        )
+      );
 
-    const filtered = items.filter(item => {
-      const title =
-        item.querySelector('title')?.textContent.toLowerCase() || '';
-      return keywords.some(k => title.includes(k));
-    });
-
-    if (filtered.length === 0) {
+    if (posts.length === 0) {
       document.getElementById('content').innerHTML =
         'No recent posts matching keywords.';
       return;
     }
 
     document.getElementById('content').innerHTML =
-      filtered.map(item => {
-        const title = item.querySelector('title')?.textContent;
-        const link = item.querySelector('link')?.getAttribute('href');
-        const author =
-          item.querySelector('author name')?.textContent || 'Reddit';
-        const date = item.querySelector('updated')?.textContent;
-
-        return `
-          <div class="item">
-            <a href="${link}" target="_blank">${title}</a>
-            <div class="meta">
-              ${author} • ${new Date(date).toLocaleDateString()}
-            </div>
+      posts.map(p => `
+        <div class="item">
+          <a href="https://reddit.com${p.permalink}" target="_blank">
+            ${p.title}
+          </a>
+          <div class="meta">
+            u/${p.author} •
+            ${new Date(p.created_utc * 1000).toLocaleDateString()}
           </div>
-        `;
-      }).join('');
+        </div>
+      `).join('');
   } catch (e) {
     document.getElementById('content').innerHTML =
       '<span style="color:red">Failed to load posts</span>';
@@ -118,6 +112,7 @@ loadPosts();
 </script>
 </body>
 </html>
+
 
 
 
