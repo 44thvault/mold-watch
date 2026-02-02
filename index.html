@@ -66,14 +66,9 @@ async function loadPosts() {
     'pm'
   ];
 
-  const query = encodeURIComponent(
-    keywords.map(k => `"${k}"`).join(' OR ')
-  );
-
+  // SIMPLE search — Reddit RSS can handle this
   const redditRSS =
-    'https://www.reddit.com/r/FLMedicalTrees/search.rss' +
-    '?q=' + query +
-    '&restrict_sr=1&sort=new';
+    'https://www.reddit.com/r/FLMedicalTrees/new.rss';
 
   const proxy =
     'https://api.allorigins.win/raw?url=' +
@@ -83,20 +78,27 @@ async function loadPosts() {
     const res = await fetch(proxy);
     const text = await res.text();
 
-    const xml = new window.DOMParser().parseFromString(text, "text/xml");
-    const items = Array.from(xml.querySelectorAll("entry"));
+    const xml = new DOMParser().parseFromString(text, 'text/xml');
+    const items = Array.from(xml.querySelectorAll('entry'));
 
-    if (items.length === 0) {
-      document.getElementById('content').innerHTML = 'No posts found.';
+    const filtered = items.filter(item => {
+      const title = item.querySelector('title')?.textContent.toLowerCase() || '';
+      return keywords.some(k => title.includes(k));
+    });
+
+    if (filtered.length === 0) {
+      document.getElementById('content').innerHTML =
+        'No recent posts matching keywords.';
       return;
     }
 
     document.getElementById('content').innerHTML =
-      items.map(item => {
-        const title = item.querySelector("title")?.textContent;
-        const link = item.querySelector("link")?.getAttribute("href");
-        const author = item.querySelector("author name")?.textContent || "Reddit";
-        const date = item.querySelector("updated")?.textContent;
+      filtered.map(item => {
+        const title = item.querySelector('title')?.textContent;
+        const link = item.querySelector('link')?.getAttribute('href');
+        const author =
+          item.querySelector('author name')?.textContent || 'Reddit';
+        const date = item.querySelector('updated')?.textContent;
 
         return `
           <div class="item">
@@ -117,4 +119,5 @@ loadPosts();
 </script>
 </body>
 </html>
+
 
