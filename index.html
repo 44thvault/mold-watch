@@ -60,66 +60,49 @@
   <div id="content">Loading posts…</div>
 
   <script>
-    async function loadPosts() {
-      const keywords = [
-        'mold',
-        'mildew',
-        'fungus',
-        'fungal',
-        'bud rot',
-        'powdery mildew',
-        'pm'
-      ];
+async function loadPosts() {
+  try {
+    const res = await fetch('/api/reddit');
+    const json = await res.json();
 
-      try {
-        const res = await fetch('/api/reddit');
-        const data = await res.json();
+    const container = document.getElementById('content');
 
-        if (!data.data || !data.data.children) {
-          document.getElementById('content').innerText =
-            'No posts found.';
-          return;
-        }
-
-        const posts = data.data.children
-          .map(p => p.data)
-          .filter(p =>
-            keywords.some(k =>
-              (p.title + ' ' + (p.selftext || ''))
-                .toLowerCase()
-                .includes(k)
-            )
-          );
-
-        if (posts.length === 0) {
-          document.getElementById('content').innerText =
-            'No recent mold-related posts.';
-          return;
-        }
-
-        document.getElementById('content').innerHTML =
-          posts.map(p => `
-            <div class="item">
-              <a href="https://reddit.com${p.permalink}" target="_blank">
-                ${p.title}
-              </a>
-              <div class="meta">
-                u/${p.author} •
-                ${new Date(p.created_utc * 1000).toLocaleDateString()}
-              </div>
-            </div>
-          `).join('');
-
-      } catch (err) {
-        document.getElementById('content').innerHTML =
-          '<span style="color:red">Failed to load posts</span>';
-      }
+    if (!json.data || !Array.isArray(json.data.children)) {
+      container.innerText = 'No posts found.';
+      return;
     }
 
-    loadPosts();
-  </script>
+    const posts = json.data.children
+      .map(c => c && c.data)
+      .filter(Boolean);
 
+    if (posts.length === 0) {
+      container.innerText = 'No posts found.';
+      return;
+    }
+
+    container.innerHTML = posts.map(p => `
+      <div class="item">
+        <a href="https://reddit.com${p.permalink}" target="_blank">
+          ${p.title || 'Untitled post'}
+        </a>
+        <div class="meta">
+          u/${p.author || 'unknown'} •
+          ${new Date(p.created_utc * 1000).toLocaleDateString()}
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    document.getElementById('content').innerHTML =
+      '<span style="color:red">Failed to load posts</span>';
+    console.error(err);
+  }
+}
+
+loadPosts();
+</script>
 </body>
 </html>
+
 
 
