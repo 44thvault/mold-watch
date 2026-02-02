@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MOLD WATCH</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
     body {
@@ -11,98 +11,102 @@
       background: #ffffff;
       color: #000;
       margin: 0;
+      padding: 40px 20px;
     }
 
-    .header {
+    h1 {
       text-align: center;
-      padding: 30px 20px;
-      border-bottom: 3px solid #000;
-      font-size: 48px;
-      font-weight: bold;
       letter-spacing: 4px;
+      margin-bottom: 40px;
     }
 
     #content {
       max-width: 900px;
       margin: 0 auto;
-      padding: 30px 20px;
     }
 
     .item {
       border-bottom: 1px solid #ccc;
-      padding: 20px 0;
+      padding: 16px 0;
     }
 
     .item a {
-      text-decoration: none;
       color: #000;
       font-weight: bold;
-      font-size: 16px;
+      text-decoration: none;
     }
 
     .item a:hover {
       text-decoration: underline;
     }
-
-    .meta {
-      font-size: 12px;
-      color: #666;
-      margin-top: 6px;
-      font-style: italic;
-    }
   </style>
 </head>
-
 <body>
 
-  <div class="header">MOLD WATCH</div>
+<h1>MOLD WATCH</h1>
 
-  <div id="content">Loading posts…</div>
+<div id="content">Loading posts…</div>
 
-  <script>
+<script>
+function stripHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html || '';
+  return div.textContent || '';
+}
+
 async function loadPosts() {
+  const container = document.getElementById('content');
+
+  const keywords = [
+    'mold',
+    'mould',
+    'pm',
+    'powdery mildew',
+    'mildew',
+    'fungus',
+    'fungal',
+    'bud rot',
+    'rot',
+    'contamination',
+    'white fuzz'
+  ];
+
   try {
     const res = await fetch('/api/reddit');
     const json = await res.json();
 
-    const container = document.getElementById('content');
+    const items = json.items || [];
 
-    if (!json.data || !Array.isArray(json.data.children)) {
-      container.innerText = 'No posts found.';
+    const matches = items.filter(item => {
+      const text = (
+        item.title + ' ' +
+        stripHtml(item.content || '')
+      ).toLowerCase();
+
+      return keywords.some(k => text.includes(k));
+    });
+
+    if (matches.length === 0) {
+      container.innerText = 'No recent mold-related posts found.';
       return;
     }
 
-    const posts = json.data.children
-      .map(c => c && c.data)
-      .filter(Boolean);
-
-    if (posts.length === 0) {
-      container.innerText = 'No posts found.';
-      return;
-    }
-
-    container.innerHTML = posts.map(p => `
+    container.innerHTML = matches.map(item => `
       <div class="item">
-        <a href="https://reddit.com${p.permalink}" target="_blank">
-          ${p.title || 'Untitled post'}
+        <a href="${item.link}" target="_blank">
+          ${item.title}
         </a>
-        <div class="meta">
-          u/${p.author || 'unknown'} •
-          ${new Date(p.created_utc * 1000).toLocaleDateString()}
-        </div>
       </div>
     `).join('');
+
   } catch (err) {
-    document.getElementById('content').innerHTML =
+    container.innerHTML =
       '<span style="color:red">Failed to load posts</span>';
-    console.error(err);
   }
 }
 
 loadPosts();
 </script>
+
 </body>
 </html>
-
-
-
