@@ -54,7 +54,7 @@
     Loading…
   </div>
 
- <script>
+<script>
 async function loadPosts() {
   const keywords = [
     'mold',
@@ -66,13 +66,11 @@ async function loadPosts() {
     'pm'
   ];
 
-  // SIMPLE search — Reddit RSS can handle this
   const redditRSS =
     'https://www.reddit.com/r/FLMedicalTrees/new.rss';
 
   const proxy =
-    'https://api.allorigins.win/raw?url=' +
-    encodeURIComponent(redditRSS);
+    'https://cors.isomorphic-git.org/' + redditRSS;
 
   try {
     const res = await fetch(proxy);
@@ -82,7 +80,8 @@ async function loadPosts() {
     const items = Array.from(xml.querySelectorAll('entry'));
 
     const filtered = items.filter(item => {
-      const title = item.querySelector('title')?.textContent.toLowerCase() || '';
+      const title =
+        item.querySelector('title')?.textContent.toLowerCase() || '';
       return keywords.some(k => title.includes(k));
     });
 
@@ -119,5 +118,6 @@ loadPosts();
 </script>
 </body>
 </html>
+
 
 
