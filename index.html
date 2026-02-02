@@ -81,7 +81,7 @@
           return;
         }
 
-        const posts = data.data.children
+        const posts = data.data.children.map(p => p.data);
           .map(p => p.data)
           .filter(p =>
             keywords.some(k =>
@@ -121,3 +121,4 @@
 
 </body>
 </html>
+
