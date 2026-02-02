@@ -1,3 +1,5 @@
+export const runtime = 'nodejs';
+
 export default async function handler(req, res) {
   try {
     const keywords = [
@@ -43,3 +45,4 @@ export default async function handler(req, res) {
     res.status(500).json([]);
   }
 }
+
