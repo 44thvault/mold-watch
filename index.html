@@ -2,117 +2,122 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>MOLD WATCH</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+  <title>MOLD WATCH</title>
 
   <style>
     body {
-      margin: 0;
-      font-family: 'Courier Prime', monospace;
-      background: #fff;
+      font-family: monospace;
+      background: #ffffff;
       color: #000;
+      margin: 0;
     }
+
     .header {
       text-align: center;
-      padding: 30px;
-      border-bottom: 4px solid #000;
+      padding: 30px 20px;
+      border-bottom: 3px solid #000;
+      font-size: 48px;
+      font-weight: bold;
+      letter-spacing: 4px;
     }
-    .container {
+
+    #content {
       max-width: 900px;
-      margin: auto;
+      margin: 0 auto;
       padding: 30px 20px;
     }
+
     .item {
       border-bottom: 1px solid #ccc;
-      padding-bottom: 20px;
-      margin-bottom: 20px;
+      padding: 20px 0;
     }
+
     .item a {
-      font-weight: 700;
-      color: #000;
       text-decoration: none;
+      color: #000;
+      font-weight: bold;
+      font-size: 16px;
     }
+
+    .item a:hover {
+      text-decoration: underline;
+    }
+
     .meta {
       font-size: 12px;
       color: #666;
-      font-style: italic;
       margin-top: 6px;
+      font-style: italic;
     }
   </style>
 </head>
 
 <body>
-  <div class="header">
-    <h1>MOLD WATCH</h1>
-  </div>
 
-  <div id="content" class="container">
-    Loading…
-  </div>
+  <div class="header">MOLD WATCH</div>
 
-<script>
-async function loadPosts() {
-  const keywords = [
-    'mold',
-    'mildew',
-    'fungus',
-    'fungal',
-    'bud rot',
-    'powdery mildew',
-    'pm'
-  ];
+  <div id="content">Loading posts…</div>
 
-  const redditJson =
-    'https://www.reddit.com/r/FLMedicalTrees/new.json?limit=100';
+  <script>
+    async function loadPosts() {
+      const keywords = [
+        'mold',
+        'mildew',
+        'fungus',
+        'fungal',
+        'bud rot',
+        'powdery mildew',
+        'pm'
+      ];
 
-  const proxy =
-    'https://corsproxy.io/?' + encodeURIComponent(redditJson);
+      try {
+        const res = await fetch('/api/reddit');
+        const data = await res.json();
 
-  try {
-    const res = await fetch(proxy);
-    const data = await res.json();
+        if (!data.data || !data.data.children) {
+          document.getElementById('content').innerText =
+            'No posts found.';
+          return;
+        }
 
-    const posts = data.data.children
-      .map(p => p.data)
-      .filter(p =>
-        keywords.some(k =>
-          (p.title + ' ' + (p.selftext || '')).toLowerCase().includes(k)
-        )
-      );
+        const posts = data.data.children
+          .map(p => p.data)
+          .filter(p =>
+            keywords.some(k =>
+              (p.title + ' ' + (p.selftext || ''))
+                .toLowerCase()
+                .includes(k)
+            )
+          );
 
-    if (posts.length === 0) {
-      document.getElementById('content').innerHTML =
-        'No recent posts matching keywords.';
-      return;
+        if (posts.length === 0) {
+          document.getElementById('content').innerText =
+            'No recent mold-related posts.';
+          return;
+        }
+
+        document.getElementById('content').innerHTML =
+          posts.map(p => `
+            <div class="item">
+              <a href="https://reddit.com${p.permalink}" target="_blank">
+                ${p.title}
+              </a>
+              <div class="meta">
+                u/${p.author} •
+                ${new Date(p.created_utc * 1000).toLocaleDateString()}
+              </div>
+            </div>
+          `).join('');
+
+      } catch (err) {
+        document.getElementById('content').innerHTML =
+          '<span style="color:red">Failed to load posts</span>';
+      }
     }
 
-    document.getElementById('content').innerHTML =
-      posts.map(p => `
-        <div class="item">
-          <a href="https://reddit.com${p.permalink}" target="_blank">
-            ${p.title}
-          </a>
-          <div class="meta">
-            u/${p.author} •
-            ${new Date(p.created_utc * 1000).toLocaleDateString()}
-          </div>
-        </div>
-      `).join('');
-  } catch (e) {
-    document.getElementById('content').innerHTML =
-      '<span style="color:red">Failed to load posts</span>';
-  }
-}
+    loadPosts();
+  </script>
 
-loadPosts();
-</script>
 </body>
 </html>
-
-
-
-
